@@ -1,0 +1,14 @@
+[
+    {
+        "title": "Welcome to MakerKluang - Innovation & Creator Space",
+        "image_url": "https://picsum.photos/id/10/650/120",
+        "link_url": "https://makerkluang.com",
+        "is_active": true
+    },
+    {
+        "title": "DocuWare Auto Archiver - Optimize Your Workflow",
+        "image_url": "https://picsum.photos/id/20/650/120",
+        "link_url": "https://makerkluang.com/docbot",
+        "is_active": true
+    }
+]
