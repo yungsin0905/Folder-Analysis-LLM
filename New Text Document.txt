@@ -1,0 +1,11 @@
+先激活虚拟环境
+
+.venv\Scripts\Activate.ps1
+
+如果这一步报错说执行策略被禁止(比如提示 "无法加载,因为在此系统上禁止运行脚本"),先跑:
+
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+激活成功后,再启动
+
+uvicorn llm.phase1:app --reload --host 127.0.0.1 --port 8000

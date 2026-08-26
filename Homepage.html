@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Folder File Analyzer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+
+    <style>
+        /* CSS Variables & Reset */
+        :root {
+            --primary-color: #00b4d8;
+            --primary-hover: #0096c7;
+            --success-color: #2ec4b6;
+            --success-hover: #20a39e;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2b2d42;
+            --text-muted: #8d99ae;
+            --border-dashed: #00b4d8;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Card Container */
+        .analyzer-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 650px;
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        /* Header */
+        .header h2 {
+            color: var(--primary-color);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border-dashed);
+            background-color: rgba(0, 180, 216, 0.08);
+            border-radius: var(--radius-lg);
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            background-color: rgba(0, 180, 216, 0.12);
+            border-color: var(--primary-hover);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            display: block;
+        }
+
+        /* File Preview List */
+        .file-preview-container {
+            width: 100%;
+            text-align: left;
+        }
+
+        .folder-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #edf2f4;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .folder-info i {
+            color: var(--primary-color);
+            margin-right: 6px;
+        }
+
+        .btn-change {
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .btn-change:hover {
+            text-decoration: underline;
+        }
+
+        .file-list {
+            margin-top: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            list-style: none;
+            padding-right: 5px;
+        }
+
+        .file-list li {
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 4px 0;
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Action Area */
+        .action-area {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            max-width: 240px;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: #ffffff;
+        }
+
+        .btn-success:hover {
+            background-color: var(--success-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Loading State */
+        .loading-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(0, 180, 216, 0.2);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .loading-text {
+            flex-grow: 1;
+            text-align: left;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background-color: #edf2f4;
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Helper Class */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="analyzer-card">
+        <!-- Header Section -->
+        <div class="header">
+            <h2>Folder File Analyzer</h2>
+            <p class="subtitle">Upload a folder to analyze file contents with LLM and export to CSV</p>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="upload-area" id="uploadArea">
+            <!-- Hidden input, webkitdirectory allows folder selection -->
+            <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+
+            <div class="upload-content" id="uploadPrompt">
+                <i class="fa-regular fa-folder-open upload-icon"></i>
+                <p class="upload-text">Click and drop folder here to upload</p>
+                <span class="upload-hint">Supports full directories including subfolders</span>
+            </div>
+
+            <!-- File Preview Container (hidden by default) -->
+            <div class="file-preview-container hidden" id="filePreview">
+                <div class="folder-info">
+                    <i class="fa-solid fa-folder-tree"></i>
+                    <span id="folderName">Selected Folder: <strong>-</strong></span>
+                    <button class="btn-change" id="btnChangeFolder">Change</button>
+                </div>
+                <ul class="file-list" id="fileList">
+                    <!-- File paths will be dynamically rendered here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Action & Status Area -->
+        <div class="action-area">
+            <!-- 1. Analyse Button -->
+            <button class="btn btn-primary" id="btnAnalyse" disabled>
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Analyse Folder
+            </button>
+
+            <!-- 2. Loading State (hidden by default) -->
+            <div class="loading-box hidden" id="loadingBox">
+                <div class="spinner"></div>
+                <div class="loading-text">
+                    <div class="loading-info">
+                        <span id="loadingStatus">Parsing files & running LLM analysis...</span>
+                        <span id="progressPercent" class="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Download CSV Button (hidden by default) -->
+            <button class="btn btn-success hidden" id="btnDownload">
+                <i class="fa-solid fa-file-csv"></i> Download CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- Frontend Interactive Script -->
+    <script>
+        const folderInput = document.getElementById('folderInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+        const filePreview = document.getElementById('filePreview');
+        const folderName = document.getElementById('folderName');
+        const fileList = document.getElementById('fileList');
+        const btnAnalyse = document.getElementById('btnAnalyse');
+        const btnChangeFolder = document.getElementById('btnChangeFolder');
+        const loadingBox = document.getElementById('loadingBox');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const btnDownload = document.getElementById('btnDownload');
+
+        // Click upload area to trigger file input
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target.id !== 'btnChangeFolder' && !filePreview.contains(e.target)) {
+                folderInput.click();
+            }
+        });
+
+        btnChangeFolder.addEventListener('click', (e) => {
+            e.stopPropagation();
+            folderInput.click();
+        });
+
+        // Monitor folder selection
+        folderInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                const rootFolderName = files[0].webkitRelativePath.split('/')[0];
+                folderName.innerHTML = `Selected: <strong>${rootFolderName}</strong> (${files.length} files)`;
+
+                fileList.innerHTML = '';
+                Array.from(files).slice(0, 50).forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = file.webkitRelativePath;
+                    fileList.appendChild(li);
+                });
+
+                uploadPrompt.classList.add('hidden');
+                filePreview.classList.remove('hidden');
+                btnAnalyse.disabled = false;
+                btnDownload.classList.add('hidden'); 
+            }
+        });
+
+        // When the user clicks the button, the actual packaged file is uploaded to the Python FastAPI backend.
+        btnAnalyse.addEventListener('click', async () => {
+        const files = folderInput.files;
+        if (!files || files.length === 0) {
+            alert("Please select a folder first!");
+            return;
+        }
+
+        btnAnalyse.classList.add('hidden');
+        loadingBox.classList.remove('hidden');
+        loadingStatus.textContent = "Uploading files...";
+        progressBar.style.width = '0%';
+        progressPercent.textContent = '0%';
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+
+        try {
+            // 1. 上传文件，立刻拿到 job_id（不用等处理完）
+            // 改成相对路径：不管同事从哪个网址打开这个网页，都会自动去连同一个host的后端
+            const startResponse = await fetch('http://127.0.0.1:8000/api/analyze-folder/start', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!startResponse.ok) {
+                throw new Error(`Server returned status: ${startResponse.status}`);
+            }
+
+            const { job_id, total } = await startResponse.json();
+            loadingStatus.textContent = `Analyzing 0 / ${total} files...`;
+
+            // 2. 每隔 800ms 轮询一次真实进度
+            const pollInterval = setInterval(async () => {
+                const progRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/progress/${job_id}`);
+                const prog = await progRes.json();
+
+                progressBar.style.width = `${prog.percent}%`;
+                progressPercent.textContent = `${prog.percent}%`;
+                loadingStatus.textContent = `Analyzing ${prog.done} / ${prog.total} files...`;
+
+                if (prog.status === "finished") {
+                    clearInterval(pollInterval);
+
+                    // 3. 处理完成，去下载真正的 CSV
+                    const downloadRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/download/${job_id}`);
+                    generatedCsvBlob = await downloadRes.blob();
+
+                    setTimeout(() => {
+                        loadingBox.classList.add('hidden');
+                        btnDownload.classList.remove('hidden');
+                    }, 300);
+                }
+            }, 800);
+
+        } catch (error) {
+            console.error("Analysis Error:", error);
+            alert("Failed to analyze folder. Check console and make sure FastAPI backend is running!");
+            loadingBox.classList.add('hidden');
+            btnAnalyse.classList.remove('hidden');
+        }
+    });
+
+        btnDownload.addEventListener('click', () => {
+            if (!generatedCsvBlob) return;
+
+            // Create Blob download link
+            const url = window.URL.createObjectURL(generatedCsvBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'docuware_export.csv'; // Download file name
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up temporary link
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        });
+    </script>
+</body>
+
+</html>
