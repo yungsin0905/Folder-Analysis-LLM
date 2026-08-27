@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Folder File Analyzer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         /* CSS Variables & Reset */
@@ -35,18 +35,65 @@
             background-color: var(--bg-color);
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
-            gap: 20px;
+            padding: 40px 20px;
+            gap: 40px;
         }
 
-        /* Card Container */
+        /* Container Wrapper */
+        .page-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* Why Choose Us Section */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            width: 100%;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            text-align: left;
+            transition: transform 0.2s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Main Analyzer Card Container */
         .analyzer-card {
             background: var(--card-bg);
             width: 100%;
-            max-width: 650px;
             padding: 40px;
             border-radius: var(--radius-lg);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
@@ -237,6 +284,11 @@
             color: var(--text-main);
         }
 
+        .loading-info {
+            display: flex;
+            justify-content: space-between;
+        }
+
         .progress-bar-bg {
             width: 100%;
             height: 6px;
@@ -259,6 +311,62 @@
             }
         }
 
+        /* How It Works Section */
+        .how-it-works {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .step-number {
+            background-color: rgba(0, 180, 216, 0.15);
+            color: var(--primary-color);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-text h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .step-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
 
         /* Helper Class */
         .hidden {
@@ -268,65 +376,120 @@
 </head>
 
 <body>
-    <div class="analyzer-card">
-        <!-- Header Section -->
-        <div class="header">
-            <h2>Folder File Analyzer</h2>
-            <p class="subtitle">Upload a folder to analyze file contents with LLM and export to CSV</p>
+
+    <div class="page-container">
+
+        <!-- 1. WHY CHOOSE US -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fa-solid fa-bolt feature-icon"></i>
+                <div class="feature-title">Smart Deep Parsing</div>
+                <div class="feature-desc">Powered by LLMs to automatically extract key insights and summaries from complex documents across your folder.</div>
+            </div>
+            <div class="feature-card">
+                <i class="fa-solid fa-folder-tree feature-icon"></i>
+                <div class="feature-title">Multi-Level Subfolders</div>
+                <div class="feature-desc">No need to manually sort files. Simply upload the root directory and let the parser recursively process all subfolders.</div>
+            </div>
+            <div class="feature-card">
+                <i class="fa-solid fa-file-export feature-icon"></i>
+                <div class="feature-title">One-Click CSV Export</div>
+                <div class="feature-desc">Automatically convert unstructured data into clean, formatted fields ready for instant download as a standard CSV file.</div>
+            </div>
         </div>
 
-        <!-- Upload Area -->
-        <div class="upload-area" id="uploadArea">
-            <!-- Hidden input, webkitdirectory allows folder selection -->
-            <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
-
-            <div class="upload-content" id="uploadPrompt">
-                <i class="fa-regular fa-folder-open upload-icon"></i>
-                <p class="upload-text">Click and drop folder here to upload</p>
-                <span class="upload-hint">Supports full directories including subfolders</span>
+        <!-- 2. MAIN ANALYZER CARD -->
+        <div class="analyzer-card">
+            <!-- Header Section -->
+            <div class="header">
+                <h2>Folder File Analyzer</h2>
+                <p class="subtitle">Upload a folder to analyze file contents with LLM and export to CSV</p>
             </div>
 
-            <!-- File Preview Container (hidden by default) -->
-            <div class="file-preview-container hidden" id="filePreview">
-                <div class="folder-info">
-                    <i class="fa-solid fa-folder-tree"></i>
-                    <span id="folderName">Selected Folder: <strong>-</strong></span>
-                    <button class="btn-change" id="btnChangeFolder">Change</button>
+            <!-- Upload Area -->
+            <div class="upload-area" id="uploadArea">
+                <!-- Hidden input, webkitdirectory allows folder selection -->
+                <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+
+                <div class="upload-content" id="uploadPrompt">
+                    <i class="fa-regular fa-folder-open upload-icon"></i>
+                    <p class="upload-text">Click or drop folder here to upload</p>
+                    <span class="upload-hint">Supports full directories including subfolders</span>
                 </div>
-                <ul class="file-list" id="fileList">
-                    <!-- File paths will be dynamically rendered here -->
-                </ul>
-            </div>
-        </div>
 
-        <!-- Action & Status Area -->
-        <div class="action-area">
-            <!-- 1. Analyse Button -->
-            <button class="btn btn-primary" id="btnAnalyse" disabled>
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Analyse Folder
-            </button>
-
-            <!-- 2. Loading State (hidden by default) -->
-            <div class="loading-box hidden" id="loadingBox">
-                <div class="spinner"></div>
-                <div class="loading-text">
-                    <div class="loading-info">
-                        <span id="loadingStatus">Parsing files & running LLM analysis...</span>
-                        <span id="progressPercent" class="progress-percent">0%</span>
+                <!-- File Preview Container (hidden by default) -->
+                <div class="file-preview-container hidden" id="filePreview">
+                    <div class="folder-info">
+                        <i class="fa-solid fa-folder-tree"></i>
+                        <span id="folderName">Selected Folder: <strong>-</strong></span>
+                        <button class="btn-change" id="btnChangeFolder">Change</button>
                     </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
-                    </div>
+                    <ul class="file-list" id="fileList">
+                        <!-- File paths will be dynamically rendered here -->
+                    </ul>
                 </div>
             </div>
 
-            <!-- 3. Download CSV Button (hidden by default) -->
-            <button class="btn btn-success hidden" id="btnDownload">
-                <i class="fa-solid fa-file-csv"></i> Download CSV
-            </button>
+            <!-- Action & Status Area -->
+            <div class="action-area">
+                <!-- 1. Analyse Button -->
+                <button class="btn btn-primary" id="btnAnalyse" disabled>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Folder
+                </button>
+
+                <!-- 2. Loading State (hidden by default) -->
+                <div class="loading-box hidden" id="loadingBox">
+                    <div class="spinner"></div>
+                    <div class="loading-text">
+                        <div class="loading-info">
+                            <span id="loadingStatus">Parsing files & running LLM analysis...</span>
+                            <span id="progressPercent" class="progress-percent">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Download CSV Button (hidden by default) -->
+                <button class="btn btn-success hidden" id="btnDownload">
+                    <i class="fa-solid fa-file-csv"></i> Download CSV
+                </button>
+            </div>
         </div>
+
+        <!-- 3. HOW IT WORKS -->
+        <div class="how-it-works">
+            <div class="section-title">
+                <i class="fa-solid fa-circle-info" style="color: var(--primary-color);"></i>
+                How It Works
+            </div>
+            <div class="steps-container">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-text">
+                        <h4>Select / Drop Folder</h4>
+                        <p>Click the upload area above to choose your target folder.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-text">
+                        <h4>Run AI Analysis</h4>
+                        <p>Click "Analyze Folder" to begin automated processing with the LLM backend.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-text">
+                        <h4>Export CSV File</h4>
+                        <p>Click "Download CSV" upon completion to save your structured dataset.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
-
 
     <!-- Frontend Interactive Script -->
     <script>
@@ -339,6 +502,7 @@
         const btnAnalyse = document.getElementById('btnAnalyse');
         const btnChangeFolder = document.getElementById('btnChangeFolder');
         const loadingBox = document.getElementById('loadingBox');
+        const loadingStatus = document.getElementById('loadingStatus');
         const progressBar = document.getElementById('progressBar');
         const progressPercent = document.getElementById('progressPercent');
         const btnDownload = document.getElementById('btnDownload');
@@ -379,68 +543,67 @@
 
         // When the user clicks the button, the actual packaged file is uploaded to the Python FastAPI backend.
         btnAnalyse.addEventListener('click', async () => {
-        const files = folderInput.files;
-        if (!files || files.length === 0) {
-            alert("Please select a folder first!");
-            return;
-        }
-
-        btnAnalyse.classList.add('hidden');
-        loadingBox.classList.remove('hidden');
-        loadingStatus.textContent = "Uploading files...";
-        progressBar.style.width = '0%';
-        progressPercent.textContent = '0%';
-
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files', files[i]);
-        }
-
-        try {
-            // 1. 上传文件，立刻拿到 job_id（不用等处理完）
-            // 改成相对路径：不管同事从哪个网址打开这个网页，都会自动去连同一个host的后端
-            const startResponse = await fetch('http://127.0.0.1:8000/api/analyze-folder/start', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!startResponse.ok) {
-                throw new Error(`Server returned status: ${startResponse.status}`);
+            const files = folderInput.files;
+            if (!files || files.length === 0) {
+                alert("Please select a folder first!");
+                return;
             }
 
-            const { job_id, total } = await startResponse.json();
-            loadingStatus.textContent = `Analyzing 0 / ${total} files...`;
+            btnAnalyse.classList.add('hidden');
+            loadingBox.classList.remove('hidden');
+            loadingStatus.textContent = "Uploading files...";
+            progressBar.style.width = '0%';
+            progressPercent.textContent = '0%';
 
-            // 2. 每隔 800ms 轮询一次真实进度
-            const pollInterval = setInterval(async () => {
-                const progRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/progress/${job_id}`);
-                const prog = await progRes.json();
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
 
-                progressBar.style.width = `${prog.percent}%`;
-                progressPercent.textContent = `${prog.percent}%`;
-                loadingStatus.textContent = `Analyzing ${prog.done} / ${prog.total} files...`;
+            try {
+                // 1. Upload files and immediately get job_id
+                const startResponse = await fetch('http://127.0.0.1:8000/api/analyze-folder/start', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                if (prog.status === "finished") {
-                    clearInterval(pollInterval);
-
-                    // 3. 处理完成，去下载真正的 CSV
-                    const downloadRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/download/${job_id}`);
-                    generatedCsvBlob = await downloadRes.blob();
-
-                    setTimeout(() => {
-                        loadingBox.classList.add('hidden');
-                        btnDownload.classList.remove('hidden');
-                    }, 300);
+                if (!startResponse.ok) {
+                    throw new Error(`Server returned status: ${startResponse.status}`);
                 }
-            }, 800);
 
-        } catch (error) {
-            console.error("Analysis Error:", error);
-            alert("Failed to analyze folder. Check console and make sure FastAPI backend is running!");
-            loadingBox.classList.add('hidden');
-            btnAnalyse.classList.remove('hidden');
-        }
-    });
+                const { job_id, total } = await startResponse.json();
+                loadingStatus.textContent = `Analyzing 0 / ${total} files...`;
+
+                // 2. Poll progress every 800ms
+                const pollInterval = setInterval(async () => {
+                    const progRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/progress/${job_id}`);
+                    const prog = await progRes.json();
+
+                    progressBar.style.width = `${prog.percent}%`;
+                    progressPercent.textContent = `${prog.percent}%`;
+                    loadingStatus.textContent = `Analyzing ${prog.done} / ${prog.total} files...`;
+
+                    if (prog.status === "finished") {
+                        clearInterval(pollInterval);
+
+                        // 3. Processing finished, fetch the final CSV
+                        const downloadRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/download/${job_id}`);
+                        generatedCsvBlob = await downloadRes.blob();
+
+                        setTimeout(() => {
+                            loadingBox.classList.add('hidden');
+                            btnDownload.classList.remove('hidden');
+                        }, 300);
+                    }
+                }, 800);
+
+            } catch (error) {
+                console.error("Analysis Error:", error);
+                alert("Failed to analyze folder. Check console and make sure FastAPI backend is running!");
+                loadingBox.classList.add('hidden');
+                btnAnalyse.classList.remove('hidden');
+            }
+        });
 
         btnDownload.addEventListener('click', () => {
             if (!generatedCsvBlob) return;
