@@ -1,0 +1,22 @@
+[2026-08-27 15:42:17] ===== SEO Agent 开始运行 =====
+[2026-08-27 15:42:17] 已备份原文件到 C:\Users\user\Desktop\Website\index.html.backup-2026-08-27
+[2026-08-27 15:43:07] LLM 生成的 SEO 建议:
+{
+  "title": "AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images",
+  "description": "Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.",
+  "keywords": "AI folder analyzer, document data extraction, LLM parsing, PDF to CSV, automated file analysis",
+  "og_title": "AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images",
+  "og_description": "Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis."
+}
+[2026-08-27 15:43:07] 已写回 index.html（只有 <head> 区域有变化，版面/样式/脚本完全未动）
+[2026-08-27 15:43:07] $ git add index.html
+
+[2026-08-27 15:43:08] $ git commit -m Automated SEO update: 2026-08-27
+[main 3c5f691] Automated SEO update: 2026-08-27
+ 1 file changed, 614 insertions(+), 595 deletions(-)
+
+[2026-08-27 15:43:11] $ git push
+To https://github.com/yungsin0905/Folder-Analysis-LLM
+   cbb143e..3c5f691  main -> main
+
+[2026-08-27 15:43:11] ❌ 运行出错: [Errno 2] No such file or directory: 'C:\\Users\\user\\.ssh'

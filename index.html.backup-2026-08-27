@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images</title>
+        <title>Folder File Analyzer</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
         <style>
@@ -373,26 +373,7 @@
                 display: none !important;
             }
         </style>
-
-    <meta name="description" content="Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.">
-    <meta name="keywords" content="AI folder analyzer, document data extraction, LLM parsing, PDF to CSV, automated file analysis">
-    <link rel="canonical" href="https://docbot.makerkluang.com/">
-    <meta property="og:title" content="AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images">
-    <meta property="og:description" content="Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://docbot.makerkluang.com/">
-    <meta name="twitter:card" content="summary_large_image">
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images",
-      "url": "https://docbot.makerkluang.com/",
-      "applicationCategory": "BusinessApplication",
-      "description": "Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis."
-    }
-    </script>
-</head>
+    </head>
 
     <body>
 
@@ -507,51 +488,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 4. USE CASE / WHY IT MATTERS -->
-<div class="how-it-works">
-    <div class="section-title">
-        <i class="fa-solid fa-briefcase" style="color: var(--primary-color);"></i>
-        Built for Teams Drowning in Paperwork
-    </div>
-    <p style="font-size: 14px; color: var(--text-main); line-height: 1.6;">
-        Property management firms, law offices, and back-office teams often deal with hundreds of PDFs, scanned contracts, and spreadsheets scattered across folders. Instead of opening each file one by one to copy key details into a spreadsheet, this tool reads the entire folder — including nested subfolders — and lets an AI model pull out the fields that matter, ready to download as a single CSV.
-    </p>
-</div>
-
-    <!-- 5. FAQ -->
-    <div class="how-it-works">
-        <div class="section-title">
-            <i class="fa-solid fa-circle-question" style="color: var(--primary-color);"></i>
-            Frequently Asked Questions
-        </div>
-        <div class="steps-container">
-            <div class="step-item">
-                <div class="step-text">
-                    <h4>What file types are supported?</h4>
-                    <p>PDF, Word (.docx), Excel (.xlsx/.xls), and image files (.jpg/.png) are all supported, including scanned documents processed with OCR.</p>
-                </div>
-            </div>
-            <div class="step-item">
-                <div class="step-text">
-                    <h4>Does it handle subfolders?</h4>
-                    <p>Yes. Upload the root folder and the tool recursively processes every file inside all subfolders automatically.</p>
-                </div>
-            </div>
-            <div class="step-item">
-                <div class="step-text">
-                    <h4>What happens to my files after analysis?</h4>
-                    <p>Files are processed in memory to extract the data you request, and are not stored long-term on the server.</p>
-                </div>
-            </div>
-            <div class="step-item">
-                <div class="step-text">
-                    <h4>Do I need to install anything?</h4>
-                    <p>No installation is required — everything runs directly in your browser.</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
         </div>
 
