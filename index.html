@@ -348,6 +348,7 @@
             justify-content: flex-start;
             align-items: center;
             flex-direction: column;
+            gap: 16px;
         }
 
         .btn {
@@ -373,6 +374,9 @@
 
         .btn-success { background-color: var(--accent); color: #fff; }
         .btn-success:hover { background-color: #ea5636; transform: translateY(-2px); }
+
+        .btn-cancel { background-color: #ef4444; color: #fff; }
+        .btn-cancel:hover { background-color: #dc2626; transform: translateY(-2px); }
 
         .loading-box { display: flex; align-items: center; gap: 15px; width: 100%; max-width: 350px; }
 
@@ -454,6 +458,75 @@
 
         .hidden { display: none !important; }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(16, 35, 59, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--line);
+            padding: 28px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            text-align: left;
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 13.5px;
+            color: var(--muted);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-modal-cancel {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--ink);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .btn-modal-confirm {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
         /* ============ Responsive ============ */
         @media (max-width: 900px) {
             .hero { grid-template-columns: 1fr; }
@@ -498,7 +571,6 @@
 
     <div class="page-shell">
 
-        <!-- 1. HERO: WHY CHOOSE US (asymmetric — badge left, reasons right) -->
         <section class="hero">
             <div class="hero-badge-col">
                 <div class="orbit-badge">
@@ -539,7 +611,6 @@
             </div>
         </section>
 
-        <!-- 2. MAIN ANALYZER (main column + side rail, not a single centered card) -->
         <section class="analyzer-section">
             <div class="analyzer-main">
                 <div class="header">
@@ -584,6 +655,10 @@
                         </div>
                     </div>
 
+                    <button class="btn btn-cancel hidden" id="btnStop">
+                        <i class="fa-solid fa-circle-stop"></i> Stop Analysis
+                    </button>
+
                     <button class="btn btn-success hidden" id="btnDownload">
                         <i class="fa-solid fa-file-csv"></i> Download CSV
                     </button>
@@ -601,7 +676,6 @@
             </aside>
         </section>
 
-        <!-- 3. BUILT FOR TEAMS -->
         <section class="section-block">
             <div class="paperwork-block">
                 <div class="paperwork-headline"><i class="fa-solid fa-briefcase" style="color: var(--brand); margin-right:8px;"></i>Built for teams drowning in paperwork</div>
@@ -609,7 +683,6 @@
             </div>
         </section>
 
-        <!-- 4. FAQ -->
         <section class="section-block">
             <div class="section-title"><i class="fa-solid fa-circle-question"></i>Frequently Asked Questions</div>
             <div class="faq-grid">
@@ -634,7 +707,17 @@
 
     </div>
 
-    <!-- Frontend Interactive Script (unchanged logic) -->
+    <div class="modal-overlay hidden" id="stopModal">
+        <div class="modal-card">
+            <div class="modal-title">Stop Analysis?</div>
+            <div class="modal-desc">Are you sure you want to cancel the analysis? Current progress will be lost.</div>
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" id="btnModalCancel">Continue</button>
+                <button class="btn-modal-confirm" id="btnModalConfirm">Stop</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const folderInput = document.getElementById('folderInput');
         const uploadArea = document.getElementById('uploadArea');
@@ -649,7 +732,14 @@
         const progressBar = document.getElementById('progressBar');
         const progressPercent = document.getElementById('progressPercent');
         const btnDownload = document.getElementById('btnDownload');
+        const btnStop = document.getElementById('btnStop');
+        const stopModal = document.getElementById('stopModal');
+        const btnModalCancel = document.getElementById('btnModalCancel');
+        const btnModalConfirm = document.getElementById('btnModalConfirm');
+
         let generatedCsvBlob = null;
+        let pollInterval = null;
+        let isStopped = false;
 
         uploadArea.addEventListener('click', (e) => {
             if (e.target.id !== 'btnChangeFolder' && !filePreview.contains(e.target)) {
@@ -679,6 +769,7 @@
                 filePreview.classList.remove('hidden');
                 btnAnalyse.disabled = false;
                 btnDownload.classList.add('hidden');
+                btnStop.classList.add('hidden');
             }
         });
 
@@ -689,8 +780,10 @@
                 return;
             }
 
+            isStopped = false;
             btnAnalyse.classList.add('hidden');
             loadingBox.classList.remove('hidden');
+            btnStop.classList.remove('hidden');
             loadingStatus.textContent = "Uploading files...";
             progressBar.style.width = '0%';
             progressPercent.textContent = '0%';
@@ -706,41 +799,94 @@
                     body: formData
                 });
 
+                if (isStopped) return;
+
                 if (!startResponse.ok) {
                     throw new Error(`Server returned status: ${startResponse.status}`);
                 }
 
                 const { job_id, total } = await startResponse.json();
+                currentJobId = job_id;
                 loadingStatus.textContent = `Analyzing 0 / ${total} files...`;
 
-                const pollInterval = setInterval(async () => {
-                    const progRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/progress/${job_id}`);
-                    const prog = await progRes.json();
-
-                    progressBar.style.width = `${prog.percent}%`;
-                    progressPercent.textContent = `${prog.percent}%`;
-                    loadingStatus.textContent = `Analyzing ${prog.done} / ${prog.total} files...`;
-
-                    if (prog.status === "finished") {
+                pollInterval = setInterval(async () => {
+                    if (isStopped) {
                         clearInterval(pollInterval);
+                        return;
+                    }
 
-                        const downloadRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/download/${job_id}`);
-                        generatedCsvBlob = await downloadRes.blob();
+                    try {
+                        const progRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/progress/${job_id}`);
+                        const prog = await progRes.json();
 
-                        setTimeout(() => {
-                            loadingBox.classList.add('hidden');
-                            btnDownload.classList.remove('hidden');
-                        }, 300);
+                        if (isStopped) return;
+
+                        progressBar.style.width = `${prog.percent}%`;
+                        progressPercent.textContent = `${prog.percent}%`;
+                        loadingStatus.textContent = `Analyzing ${prog.done} / ${prog.total} files...`;
+
+                        if (prog.status === "finished") {
+                            clearInterval(pollInterval);
+
+                            const downloadRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/download/${job_id}`);
+                            generatedCsvBlob = await downloadRes.blob();
+
+                            setTimeout(() => {
+                                loadingBox.classList.add('hidden');
+                                btnStop.classList.add('hidden');
+                                btnDownload.classList.remove('hidden');
+                            }, 300);
+                        }
+                    } catch (err) {
+                        console.error("Polling Error:", err);
                     }
                 }, 800);
 
             } catch (error) {
-                console.error("Analysis Error:", error);
-                alert("Failed to analyze folder. Check console and make sure FastAPI backend is running!");
-                loadingBox.classList.add('hidden');
-                btnAnalyse.classList.remove('hidden');
+                if (!isStopped) {
+                    console.error("Analysis Error:", error);
+                    alert("Failed to analyze folder. Check console and make sure FastAPI backend is running!");
+                    resetState();
+                }
             }
         });
+
+        // Show confirmation modal
+        btnStop.addEventListener('click', () => {
+            stopModal.classList.remove('hidden');
+        });
+
+        // Hide modal on Cancel
+        btnModalCancel.addEventListener('click', () => {
+            stopModal.classList.add('hidden');
+        });
+
+        // Confirm Stop
+        btnModalConfirm.addEventListener('click',async () => {
+            stopModal.classList.add('hidden');
+            isStopped = true;
+            if (pollInterval) clearInterval(pollInterval);
+
+            // 关键改动：真正通知后端取消，而不是只在前端假装停止
+            if (currentJobId) {
+                try {
+                    await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/cancel/${currentJobId}`, {
+                        method: 'POST'
+                    });
+                } catch (err) {
+                    console.error("取消任务失败:", err);
+                }
+            }
+
+            resetState();
+        });
+
+        function resetState() {
+            loadingBox.classList.add('hidden');
+            btnStop.classList.add('hidden');
+            btnAnalyse.classList.remove('hidden');
+            btnAnalyse.disabled = false;
+        }
 
         btnDownload.addEventListener('click', () => {
             if (!generatedCsvBlob) return;

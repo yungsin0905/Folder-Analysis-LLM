@@ -18,8 +18,11 @@ import base64
 import uuid
 import asyncio
 
-# 存储每个任务的处理进度： {job_id: {"total": int, "done": int, "status": "processing"/"finished", "result": bytes}}
+# 存储每个任务的处理进度： {job_id: {"total": int, "done": int, "status": "processing"/"finished"/"cancelled", "result": bytes}}
 JOBS = {}
+
+# 存储被取消的任务 ID
+CANCELLED_JOBS = set()
 
 app = FastAPI()
 
@@ -33,8 +36,7 @@ app.add_middleware(
 )
 
 # ------------------------------------------------------------------
-# 0. 首頁：直接把 index.html serve 出來，同事只要開一個網址就好
-#    index.html 要跟這個 backend.py 放在同一個資料夾
+# 0. 首页
 # ------------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -45,8 +47,7 @@ async def serve_frontend():
 # ------------------------------------------------------------------
 # 1. 环境与 LM Studio 配置
 # ------------------------------------------------------------------
-# 修正：去除了原代码重复的 http:// 前缀
-LM_STUDIO_URL =  "http://127.0.0.1:1234/v1"
+LM_STUDIO_URL = "http://127.0.0.1:1234/v1"
 
 client = OpenAI(
     base_url=LM_STUDIO_URL, 
@@ -68,28 +69,21 @@ DOC_TYPE_MAP = {
 }
 
 # ------------------------------------------------------------------
-# 日期识别辅助：排除身份证号码等长数字串
+# 日期识别辅助
 # ------------------------------------------------------------------
 NRIC_PATTERN = re.compile(r"\d{6}\s*-?\s*\d{2}\s*-?\s*\d{4}")
 
 def get_excluded_spans(text):
-    """找出所有像马来西亚 IC 号码 (6位-2位-4位) 的位置区间"""
     return [m.span() for m in NRIC_PATTERN.finditer(text)]
 
 def overlaps(start, end, spans):
     return any(not (end <= s or start >= e) for s, e in spans)
 
 def is_part_of_longer_number(text, start, end):
-    """如果匹配到的日期前后还连着数字，说明它只是更长数字串的一部分（比如IC、电话）"""
     before = text[start - 1] if start > 0 else ""
     after = text[end] if end < len(text) else ""
     return before.isdigit() or after.isdigit()
 
-# ------------------------------------------------------------------
-# 日期清洗格式化：提升到模块顶层，供 extract_docuware_fields() 和
-# process_file() 共用（修复：之前只在 extract_docuware_fields 内部定义，
-# process_file 调用不到会导致 NameError -> 整行变成 ERROR）
-# ------------------------------------------------------------------
 def clean_and_format_date(raw_date_str):
     if not raw_date_str:
         return ""
@@ -97,10 +91,10 @@ def clean_and_format_date(raw_date_str):
     try:
         parsed_dt = parser.parse(cleaned, dayfirst=True)
         if parsed_dt.year < 1990 or parsed_dt.year > 2030:
-            return ""   # 年份不合理，返回空，不要塞脏数据
+            return ""
         return parsed_dt.strftime("%Y-%m-%d")
     except Exception:
-        return ""       # 解析失败也返回空
+        return ""
 
 # ------------------------------------------------------------------
 # 2. 文档内容读取函数
@@ -177,7 +171,6 @@ def analyze_with_lm_studio(text: str) -> dict:
             temperature=0.1
         )
         content = response.choices[0].message.content.strip()
-        # 去掉可能的 markdown 代码块包裹
         content = re.sub(r"^```json\s*|\s*```$", "", content, flags=re.MULTILINE).strip()
         import json
         return json.loads(content)
@@ -185,14 +178,9 @@ def analyze_with_lm_studio(text: str) -> dict:
         print(f"LLM 文本分析失败: {e}")
         return {}
 
-
-
 def extract_handwritten_date_with_llm(file_bytes:bytes, ext: str) -> str:
-    """利用 LM Studio 的视觉大模型读取图片中的手写日期"""
     try:
         target_bytes = file_bytes
-
-        # 如果是 PDF 文件，必须先转换成 JPG 图片字节
         if ext == '.pdf':
             images = convert_from_bytes(file_bytes, first_page=1, last_page=1, poppler_path=POPPLER_PATH)
             if images:
@@ -202,7 +190,6 @@ def extract_handwritten_date_with_llm(file_bytes:bytes, ext: str) -> str:
             else:
                 return ""
 
-        # 转为 Base64 编码
         base64_image = base64.b64encode(target_bytes).decode('utf-8')
         
         prompt = (
@@ -212,7 +199,7 @@ def extract_handwritten_date_with_llm(file_bytes:bytes, ext: str) -> str:
         )
 
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",  # 确保你老板 LM Studio 载入的是支持 Vision 视觉功能的模型
+            model="openai/gpt-oss-20b",
             messages=[
                 {
                     "role": "user",
@@ -229,7 +216,6 @@ def extract_handwritten_date_with_llm(file_bytes:bytes, ext: str) -> str:
         )
         
         result = response.choices[0].message.content.strip()
-        # 简单正则校验 AI 返回的是不是 YYYY-MM-DD 格式
         match = re.search(r"\d{4}-\d{2}-\d{2}", result)
         if match:
             return match.group(0)
@@ -255,66 +241,29 @@ def extract_docuware_fields(full_text, filename=""):
     elif "COVER LETTER" in text_upper or "ENCLOSED HEREWITH" in text_upper or "COVER LETTER" in filename_upper: data["Document Type"] = DOC_TYPE_MAP["COVER"]
 
     # 2. Lot No
-    # ------------------------------------------------------------------
-    # 2. Lot No 提取（融合旧代码的高命中率 + 排除 2-18 商场办公室）
-    # ------------------------------------------------------------------
-    # A. 优先从 DEMISED PREMISES 中抓取
-    demised_match = re.search(
-        r"DEMISED PREMISES\s*[:]?\s*(.*?)(?:\n|,)", full_text, re.IGNORECASE
-    )
+    demised_match = re.search(r"DEMISED PREMISES\s*[:]?\s*(.*?)(?:\n|,)", full_text, re.IGNORECASE)
     if demised_match:
         lot_only = re.search(r"([A-Z0-9\-\.& ]+)", demised_match.group(1))
         if lot_only:
             val = lot_only.group(1).strip()
-            # 排除 2-18 OFFICE
             if not ("2-18" in val.upper() and "OFFICE" in text_upper):
                 data["Lot / Push Cart No."] = val
 
-    # B. 如果 A 没抓到，找括号里的店铺号 (比如 "1-46 & 1-47")
     if not data["Lot / Push Cart No."]:
-        bracket_match = re.search(
-            r"\(\s*([0-9A-Z\-\.& ]{2,30})\s*\)", full_text
-        )
+        bracket_match = re.search(r"\(\s*([0-9A-Z\-\.& ]{2,30})\s*\)", full_text)
         if bracket_match:
             b_val = bracket_match.group(1).strip()
-            # 简单判断：必须包含数字或连字符 -，且不能包含 OFFICE
-            if (
-                any(c.isdigit() for c in b_val)
-                or "-" in b_val
-            ) and "OFFICE" not in b_val.upper():
+            if (any(c.isdigit() for c in b_val) or "-" in b_val) and "OFFICE" not in b_val.upper():
                 data["Lot / Push Cart No."] = f"LOT NO. {b_val}"
 
-    # C. 旧代码兜底：全局匹配 LOT / UNIT / PREMISE
-    #    修复点1：捕获组改成非贪婪 + 前瞻在遇到「连续2个以上空格 / 换行 / 结尾」时停止，
-    #             避免像 Excel 用多空格分列时，把后面不相干的表头/字段一起吃进来。
-    #    修复点2：新增「必须含数字」校验 —— 真正的 Lot 值一定带数字（如 "1-46 & 1-47"、
-    #             "2018"），而像 "Existing Tenant"、"Status" 这类表头文字不含数字，
-    #             命中后 continue 跳过，继续找下一个匹配，而不是直接 break 拿到错的值。
     if not data["Lot / Push Cart No."]:
-        lot_matches = re.finditer(
-            r"(?:LOT|UNIT|PREMISE)(?:\s+NO\.?)?\s*[:]?\s*([A-Z0-9\-\.& ]+?)(?=\s{2,}|\n|$)",
-            full_text,
-            re.IGNORECASE,
-        )
+        lot_matches = re.finditer(r"(?:LOT|UNIT|PREMISE)(?:\s+NO\.?)?\s*[:]?\s*([A-Z0-9\-\.& ]+?)(?=\s{2,}|\n|$)", full_text, re.IGNORECASE)
         for match in lot_matches:
             val = match.group(1).strip()
-            # 1. 过滤 2-18 OFFICE 地址
-            if "2-18" in val and "OFFICE" in text_upper:
-                continue
-            # 2. 过滤掉纯日期的误抓 (如 18-FEB)
-            if re.search(
-                r"^\d{1,2}-(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)",
-                val,
-                re.IGNORECASE,
-            ):
-                continue
-            # 3. 长度太短的过滤掉
-            if len(val) < 2:
-                continue
-            # 4. 必须含数字，否则大概率是表头文字（如 "Existing Tenant"），跳过继续找下一个
-            if not re.search(r"\d", val):
-                continue
-
+            if "2-18" in val and "OFFICE" in text_upper: continue
+            if re.search(r"^\d{1,2}-(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)", val, re.IGNORECASE): continue
+            if len(val) < 2: continue
+            if not re.search(r"\d", val): continue
             data["Lot / Push Cart No."] = val
             break
 
@@ -342,39 +291,29 @@ def extract_docuware_fields(full_text, filename=""):
             data["Trade Name"] = re.sub(r"\s+SDN\.?\s*BHD\.?.*", "", data["Trade Name"], flags=re.IGNORECASE).strip()
 
     # 5. Date
-    excluded_spans = get_excluded_spans(full_text)  # 先把所有 IC 号码位置标出来
-
+    excluded_spans = get_excluded_spans(full_text)
     raw_date = ""
 
-    # 优先找英文月份格式 (e.g. 3 Dec 2020)，取第一个通过过滤的候选
     for m in re.finditer(r"(\d{1,2}.{0,3}\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*\s+20\d{2})", full_text, re.IGNORECASE):
-        if overlaps(m.start(), m.end(), excluded_spans):
-            continue
-        if is_part_of_longer_number(full_text, m.start(), m.end()):
-            continue
+        if overlaps(m.start(), m.end(), excluded_spans): continue
+        if is_part_of_longer_number(full_text, m.start(), m.end()): continue
         raw_date = m.group(1)
         break
 
-    # 找不到英文月份格式，再找纯数字日期格式 (e.g. 21/12/2020)
     if not raw_date:
         for m in re.finditer(r"(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})", full_text):
-            if overlaps(m.start(), m.end(), excluded_spans):
-                continue
-            if is_part_of_longer_number(full_text, m.start(), m.end()):
-                continue
+            if overlaps(m.start(), m.end(), excluded_spans): continue
+            if is_part_of_longer_number(full_text, m.start(), m.end()): continue
             raw_date = m.group(1)
             break
 
-    # 统一格式为 YYYY-MM-DD 纯文本，不再需要 \t（配合 openpyxl 文本格式列使用）
     data["Document Date"] = clean_and_format_date(raw_date)
     return data
 
-
 # ------------------------------------------------------------------
-# 5. FastAPI 接口：生成与导出 CSV
+# 5. FastAPI 接口与后台处理
 # ------------------------------------------------------------------
 def process_file(file_bytes: bytes, filename: str) -> dict:
-    """处理单个文件，返回一行结果（抽出来方便复用）"""
     ext = os.path.splitext(filename)[1].lower()
     text = ""
     try:
@@ -426,16 +365,38 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
 
 
 async def run_analysis_job(job_id: str, files_data: list):
-    """背景任务：逐个处理文件，每处理完一个就更新进度"""
+    """
+    背景任务：逐个处理文件，增加取消指令检查。
+
+    关键改动：process_file 内部包含同步阻塞调用（OCR、pdf2image、以及对
+    LM Studio 的同步 HTTP 请求），如果直接在这个 async 函数里调用会卡住
+    整个事件循环，导致其他请求（包括 /cancel、/progress、甚至新的 /start）
+    在这段时间内完全无法响应。用 asyncio.to_thread 把它丢进线程池执行，
+    避免阻塞事件循环，这样取消按钮和轮询才能正常工作。
+    """
     output_rows = []
-    total = len(files_data)
 
     for i, (filename, file_bytes) in enumerate(files_data):
-        row = process_file(file_bytes, filename)
+        # 🛑 在处理每一个文件前检查该 job_id 是否已被取消
+        if job_id in CANCELLED_JOBS:
+            print(f"🛑 Job {job_id} 已被用户手动停止！直接退出后台处理...")
+            if job_id in JOBS:
+                JOBS[job_id]["status"] = "cancelled"
+            CANCELLED_JOBS.discard(job_id)  # 清理集合（discard 不存在时不会报错）
+            return
+
+        # 关键改动：用线程池跑同步阻塞代码，不卡住事件循环
+        row = await asyncio.to_thread(process_file, file_bytes, filename)
         output_rows.append(row)
         JOBS[job_id]["done"] = i + 1
-        # 让出控制权，确保进度能被轮询到（避免长时间同步阻塞）
-        await asyncio.sleep(0)
+
+    # 循环结束后再检查一次，防止最后一个文件处理期间被取消
+    if job_id in CANCELLED_JOBS:
+        print(f"🛑 Job {job_id} 在收尾阶段被取消！")
+        if job_id in JOBS:
+            JOBS[job_id]["status"] = "cancelled"
+        CANCELLED_JOBS.discard(job_id)
+        return
 
     # 生成 CSV
     output = io.StringIO()
@@ -450,10 +411,8 @@ async def run_analysis_job(job_id: str, files_data: list):
 
 @app.post("/api/analyze-folder/start")
 async def start_analysis(files: list[UploadFile] = File(...)):
-    """接收文件，立刻返回 job_id，后台开始处理"""
     job_id = str(uuid.uuid4())
 
-    # 必须先把上传内容读出来，因为 UploadFile 在请求结束后会被关闭
     files_data = []
     for file in files:
         content = await file.read()
@@ -461,15 +420,23 @@ async def start_analysis(files: list[UploadFile] = File(...)):
 
     JOBS[job_id] = {"total": len(files_data), "done": 0, "status": "processing", "result": None}
 
-    # 丢到背景执行，不阻塞当前请求
     asyncio.create_task(run_analysis_job(job_id, files_data))
 
     return {"job_id": job_id, "total": len(files_data)}
 
 
+# 🛑 取消任务接口
+@app.post("/api/analyze-folder/cancel/{job_id}")
+async def cancel_analysis(job_id: str):
+    if job_id in JOBS:
+        CANCELLED_JOBS.add(job_id)
+        JOBS[job_id]["status"] = "cancelled"
+        return {"status": "cancelled", "job_id": job_id}
+    raise HTTPException(status_code=404, detail="Job not found")
+
+
 @app.get("/api/analyze-folder/progress/{job_id}")
 async def get_progress(job_id: str):
-    """前端轮询：查询当前处理进度"""
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -479,10 +446,9 @@ async def get_progress(job_id: str):
 
 @app.get("/api/analyze-folder/download/{job_id}")
 async def download_result(job_id: str):
-    """处理完成后，前端调这个来真正下载 CSV"""
     job = JOBS.get(job_id)
     if not job or job["status"] != "finished":
-        raise HTTPException(status_code=400, detail="Job not finished yet")
+        raise HTTPException(status_code=400, detail="Job not finished or was cancelled")
 
     return StreamingResponse(
         io.BytesIO(job["result"]),

@@ -9,3 +9,6 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 激活成功后,再启动
 
 uvicorn llm.phase1:app --reload --host 127.0.0.1 --port 8000
+
+开启couldflare tunnel（powershell）
+C:\cloudflared\cloudflared.exe tunnel --url http://127.0.0.1:8000
