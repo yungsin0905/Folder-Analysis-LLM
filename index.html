@@ -342,6 +342,16 @@
             text-overflow: ellipsis;
         }
 
+        .skipped-note {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--accent);
+            background: var(--accent-tint);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            line-height: 1.5;
+        }
+
         .action-area {
             margin-top: 26px;
             display: flex;
@@ -624,7 +634,7 @@
                     <div class="upload-content" id="uploadPrompt">
                         <i class="fa-regular fa-folder-open upload-icon"></i>
                         <p class="upload-text">Click or drop folder here to upload</p>
-                        <span class="upload-hint">Supports full directories including subfolders</span>
+                        <span class="upload-hint">Supports PDF, Word, Excel, and image files (subfolders included)</span>
                     </div>
 
                     <div class="file-preview-container hidden" id="filePreview">
@@ -634,6 +644,7 @@
                             <button class="btn-change" id="btnChangeFolder">Change</button>
                         </div>
                         <ul class="file-list" id="fileList"></ul>
+                        <div class="skipped-note hidden" id="skippedNote"></div>
                     </div>
                 </div>
 
@@ -725,6 +736,7 @@
         const filePreview = document.getElementById('filePreview');
         const folderName = document.getElementById('folderName');
         const fileList = document.getElementById('fileList');
+        const skippedNote = document.getElementById('skippedNote');
         const btnAnalyse = document.getElementById('btnAnalyse');
         const btnChangeFolder = document.getElementById('btnChangeFolder');
         const loadingBox = document.getElementById('loadingBox');
@@ -737,9 +749,20 @@
         const btnModalCancel = document.getElementById('btnModalCancel');
         const btnModalConfirm = document.getElementById('btnModalConfirm');
 
+        // 后端实际会处理的文件类型，需与 main.py 的 SUPPORTED_EXTS 保持一致
+        const SUPPORTED_EXTS = ['.pdf', '.docx', '.xlsx', '.xls', '.jpg', '.jpeg', '.png'];
+
+        function isSupportedFile(file) {
+            const lower = (file.name || '').toLowerCase();
+            return SUPPORTED_EXTS.some(ext => lower.endsWith(ext));
+        }
+
         let generatedCsvBlob = null;
         let pollInterval = null;
         let isStopped = false;
+        let currentJobId = null;
+        // 当前选中且被判定为「受支持类型」的文件，点击 Analyze 时只上传这些
+        let selectedSupportedFiles = [];
 
         uploadArea.addEventListener('click', (e) => {
             if (e.target.id !== 'btnChangeFolder' && !filePreview.contains(e.target)) {
@@ -753,30 +776,43 @@
         });
 
         folderInput.addEventListener('change', (e) => {
-            const files = e.target.files;
-            if (files.length > 0) {
-                const rootFolderName = files[0].webkitRelativePath.split('/')[0];
-                folderName.innerHTML = `Selected: <strong>${rootFolderName}</strong> (${files.length} files)`;
+            const allFiles = Array.from(e.target.files);
+            if (allFiles.length === 0) return;
 
-                fileList.innerHTML = '';
-                Array.from(files).slice(0, 50).forEach(file => {
-                    const li = document.createElement('li');
-                    li.textContent = file.webkitRelativePath;
-                    fileList.appendChild(li);
-                });
+            // 只保留支持的文件类型，其余的直接不显示（反正后端也会过滤掉）
+            const supportedFiles = allFiles.filter(isSupportedFile);
+            const skippedCount = allFiles.length - supportedFiles.length;
+            selectedSupportedFiles = supportedFiles;
 
-                uploadPrompt.classList.add('hidden');
-                filePreview.classList.remove('hidden');
-                btnAnalyse.disabled = false;
-                btnDownload.classList.add('hidden');
-                btnStop.classList.add('hidden');
+            const rootFolderName = allFiles[0].webkitRelativePath.split('/')[0];
+            folderName.innerHTML = `Selected: <strong>${rootFolderName}</strong> (${supportedFiles.length} files)`;
+
+            fileList.innerHTML = '';
+            supportedFiles.slice(0, 50).forEach(file => {
+                const li = document.createElement('li');
+                li.textContent = file.webkitRelativePath;
+                fileList.appendChild(li);
+            });
+
+            if (skippedCount > 0) {
+                skippedNote.textContent = `${skippedCount} unsupported file${skippedCount > 1 ? 's' : ''} will be skipped (only PDF, Word, Excel, and image files are analyzed).`;
+                skippedNote.classList.remove('hidden');
+            } else {
+                skippedNote.classList.add('hidden');
+                skippedNote.textContent = '';
             }
+
+            uploadPrompt.classList.add('hidden');
+            filePreview.classList.remove('hidden');
+            btnAnalyse.disabled = supportedFiles.length === 0;
+            btnDownload.classList.add('hidden');
+            btnStop.classList.add('hidden');
         });
 
         btnAnalyse.addEventListener('click', async () => {
-            const files = folderInput.files;
+            const files = selectedSupportedFiles;
             if (!files || files.length === 0) {
-                alert("Please select a folder first!");
+                alert("Please select a folder with at least one supported file first!");
                 return;
             }
 
@@ -862,7 +898,7 @@
         });
 
         // Confirm Stop
-        btnModalConfirm.addEventListener('click',async () => {
+        btnModalConfirm.addEventListener('click', async () => {
             stopModal.classList.add('hidden');
             isStopped = true;
             if (pollInterval) clearInterval(pollInterval);
@@ -885,7 +921,7 @@
             loadingBox.classList.add('hidden');
             btnStop.classList.add('hidden');
             btnAnalyse.classList.remove('hidden');
-            btnAnalyse.disabled = false;
+            btnAnalyse.disabled = selectedSupportedFiles.length === 0;
         }
 
         btnDownload.addEventListener('click', () => {
