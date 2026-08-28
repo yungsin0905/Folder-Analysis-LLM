@@ -1,378 +1,477 @@
-    <!DOCTYPE html>
-    <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 
-        <style>
-            /* CSS Variables & Reset */
-            :root {
-                --primary-color: #00b4d8;
-                --primary-hover: #0096c7;
-                --success-color: #2ec4b6;
-                --success-hover: #20a39e;
-                --bg-color: #f4f7f6;
-                --card-bg: #ffffff;
-                --text-main: #2b2d42;
-                --text-muted: #8d99ae;
-                --border-dashed: #00b4d8;
-                --radius-lg: 16px;
-                --radius-md: 10px;
-            }
+    <style>
+        /* ============ Tokens ============ */
+        :root {
+            --ink: #10233b;
+            --muted: #5c7186;
+            --bg: #eef3f4;
+            --surface: #ffffff;
+            --brand: #0093ac;
+            --brand-dark: #026f83;
+            --brand-tint: #e3f5f8;
+            --accent: #ff6b4a;
+            --accent-tint: #ffe9e2;
+            --line: #e1e8ea;
+            --radius-lg: 22px;
+            --radius-md: 14px;
+            --radius-sm: 9px;
+            --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+            --font-body: 'Inter', 'Segoe UI', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
 
-            * {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-            body {
-                background-color: var(--bg-color);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                min-height: 100vh;
-                padding: 40px 20px;
-                gap: 40px;
-            }
+        html { scroll-behavior: smooth; }
 
-            /* Container Wrapper */
-            .page-container {
-                width: 100%;
-                max-width: 800px;
-                display: flex;
-                flex-direction: column;
-                gap: 30px;
-            }
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(circle at 100% 0%, rgba(0,147,172,0.08), transparent 45%),
+                radial-gradient(circle at 0% 100%, rgba(255,107,74,0.06), transparent 40%);
+            color: var(--ink);
+            min-height: 100vh;
+            padding: 56px 24px 80px;
+        }
 
-            /* Why Choose Us Section */
-            .features-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-                gap: 16px;
-                width: 100%;
-            }
+        a { color: inherit; }
 
-            .feature-card {
-                background: var(--card-bg);
-                padding: 20px;
-                border-radius: var(--radius-md);
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-                text-align: left;
-                transition: transform 0.2s ease;
-            }
+        /* ============ Shell ============ */
+        .page-shell {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 64px;
+        }
 
-            .feature-card:hover {
-                transform: translateY(-3px);
-            }
+        .eyebrow {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--brand-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-            .feature-icon {
-                font-size: 24px;
-                color: var(--primary-color);
-                margin-bottom: 10px;
-            }
+        .eyebrow::before {
+            content: "";
+            width: 20px;
+            height: 1px;
+            background: var(--brand);
+            display: inline-block;
+        }
 
-            .feature-title {
-                font-size: 15px;
-                font-weight: 700;
-                color: var(--text-main);
-                margin-bottom: 6px;
-            }
+        /* ============ Hero: Why Choose Us (asymmetric, not centered) ============ */
+        .hero {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 48px;
+            align-items: start;
+        }
 
-            .feature-desc {
-                font-size: 13px;
-                color: var(--text-muted);
-                line-height: 1.5;
-            }
+        .hero-badge-col {
+            position: sticky;
+            top: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
 
-            /* Main Analyzer Card Container */
-            .analyzer-card {
-                background: var(--card-bg);
-                width: 100%;
-                padding: 40px;
-                border-radius: var(--radius-lg);
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-                text-align: center;
-            }
+        .orbit-badge {
+            position: relative;
+            width: 210px;
+            height: 210px;
+        }
 
-            /* Header */
-            .header h2 {
-                color: var(--primary-color);
-                font-size: 28px;
-                font-weight: 700;
-                margin-bottom: 8px;
-            }
+        .orbit-ring {
+            position: absolute;
+            inset: 0;
+            border: 1.5px dashed rgba(0,147,172,0.35);
+            border-radius: 50%;
+            animation: spin-slow 22s linear infinite;
+        }
 
-            .header .subtitle {
-                color: var(--text-muted);
-                font-size: 14px;
-                margin-bottom: 30px;
-            }
+        .orbit-ring::before {
+            content: "";
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
 
-            /* Upload Area */
-            .upload-area {
-                border: 2px dashed var(--border-dashed);
-                background-color: rgba(0, 180, 216, 0.08);
-                border-radius: var(--radius-lg);
-                padding: 40px 20px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                min-height: 200px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                position: relative;
-            }
+        @keyframes spin-slow {
+            to { transform: rotate(360deg); }
+        }
 
-            .upload-area:hover {
-                background-color: rgba(0, 180, 216, 0.12);
-                border-color: var(--primary-hover);
-            }
+        .orbit-core {
+            position: absolute;
+            inset: 22px;
+            border-radius: 50%;
+            background: linear-gradient(155deg, var(--brand) 0%, var(--brand-dark) 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.02em;
+            line-height: 1.3;
+            padding: 10px;
+            box-shadow: 0 18px 30px -12px rgba(0,111,131,0.55);
+        }
 
-            .upload-icon {
-                font-size: 48px;
-                color: var(--primary-color);
-                margin-bottom: 12px;
-            }
+        .hero-badge-caption {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+            max-width: 240px;
+        }
 
-            .upload-text {
-                font-size: 16px;
-                font-weight: 600;
-                color: var(--text-main);
-            }
+        .hero-headline {
+            font-family: var(--font-display);
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.01em;
+            margin-bottom: 28px;
+            max-width: 560px;
+        }
 
-            .upload-hint {
-                font-size: 12px;
-                color: var(--text-muted);
-                margin-top: 6px;
-                display: block;
-            }
+        .hero-headline span { color: var(--brand-dark); }
 
-            /* File Preview List */
-            .file-preview-container {
-                width: 100%;
-                text-align: left;
-            }
+        .reason-list {
+            display: flex;
+            flex-direction: column;
+        }
 
-            .folder-info {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding-bottom: 12px;
-                border-bottom: 1px solid #edf2f4;
-                color: var(--text-main);
-                font-size: 14px;
-            }
+        .reason-item {
+            display: grid;
+            grid-template-columns: 40px 1fr;
+            gap: 18px;
+            padding: 22px 0;
+            border-top: 1px solid var(--line);
+            text-align: left;
+        }
 
-            .folder-info i {
-                color: var(--primary-color);
-                margin-right: 6px;
-            }
+        .reason-item:last-child { border-bottom: 1px solid var(--line); }
 
-            .btn-change {
-                background: transparent;
-                border: none;
-                color: var(--primary-color);
-                cursor: pointer;
-                font-weight: 600;
-                font-size: 13px;
-            }
+        .reason-index {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--brand);
+            padding-top: 2px;
+        }
 
-            .btn-change:hover {
-                text-decoration: underline;
-            }
+        .reason-icon {
+            font-size: 18px;
+            color: var(--brand);
+            margin-bottom: 8px;
+        }
 
-            .file-list {
-                margin-top: 10px;
-                max-height: 120px;
-                overflow-y: auto;
-                list-style: none;
-                padding-right: 5px;
-            }
+        .reason-title {
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
 
-            .file-list li {
-                font-size: 12px;
-                color: var(--text-muted);
-                padding: 4px 0;
-                font-family: monospace;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
+        .reason-desc {
+            font-size: 13.5px;
+            color: var(--muted);
+            line-height: 1.6;
+            max-width: 480px;
+        }
 
-            /* Action Area */
-            .action-area {
-                margin-top: 30px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                flex-direction: column;
-            }
+        /* ============ Analyzer Card ============ */
+        .analyzer-section {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 0;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 24px 48px -28px rgba(16,35,59,0.18);
+            border: 1px solid var(--line);
+            overflow: hidden;
+        }
 
-            /* Buttons */
-            .btn {
-                width: 100%;
-                max-width: 240px;
-                padding: 14px 24px;
-                font-size: 16px;
-                font-weight: 600;
-                border: none;
-                border-radius: var(--radius-md);
-                cursor: pointer;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            }
+        .analyzer-main {
+            padding: 44px;
+            text-align: left;
+        }
 
-            .btn-primary {
-                background-color: var(--primary-color);
-                color: #ffffff;
-            }
+        .analyzer-side {
+            background: linear-gradient(165deg, var(--brand-dark), var(--brand));
+            padding: 44px 32px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
-            .btn-primary:hover:not(:disabled) {
-                background-color: var(--primary-hover);
-                transform: translateY(-2px);
-            }
+        .analyzer-side h4 {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
 
-            .btn-primary:disabled {
-                background-color: #cbd5e1;
-                cursor: not-allowed;
-                box-shadow: none;
-            }
+        .side-step {
+            display: flex;
+            gap: 12px;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.88);
+            padding: 12px 0;
+            border-top: 1px solid rgba(255,255,255,0.18);
+        }
+        .side-step:first-of-type { border-top: none; }
 
-            .btn-success {
-                background-color: var(--success-color);
-                color: #ffffff;
-            }
+        .side-step b {
+            font-family: var(--font-mono);
+            color: #fff;
+            font-weight: 500;
+        }
 
-            .btn-success:hover {
-                background-color: var(--success-hover);
-                transform: translateY(-2px);
-            }
+        .side-note {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.7);
+            border-top: 1px solid rgba(255,255,255,0.18);
+            padding-top: 16px;
+            margin-top: 16px;
+        }
 
-            /* Loading State */
-            .loading-box {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                width: 100%;
-                max-width: 350px;
-            }
+        .header h2 {
+            font-family: var(--font-display);
+            color: var(--ink);
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
 
-            .spinner {
-                width: 28px;
-                height: 28px;
-                border: 3px solid rgba(0, 180, 216, 0.2);
-                border-top-color: var(--primary-color);
-                border-radius: 50%;
-                animation: spin 0.8s linear infinite;
-                flex-shrink: 0;
-            }
+        .header .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
 
-            .loading-text {
-                flex-grow: 1;
-                text-align: left;
-                font-size: 13px;
-                color: var(--text-main);
-            }
+        .upload-area {
+            border: 1.5px dashed var(--brand);
+            background-color: var(--brand-tint);
+            border-radius: var(--radius-md);
+            padding: 36px 24px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            min-height: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
 
-            .loading-info {
-                display: flex;
-                justify-content: space-between;
-            }
+        .upload-area:hover {
+            background-color: #d7eff3;
+            border-color: var(--brand-dark);
+        }
 
-            .progress-bar-bg {
-                width: 100%;
-                height: 6px;
-                background-color: #edf2f4;
-                border-radius: 3px;
-                margin-top: 6px;
-                overflow: hidden;
-            }
+        .upload-content { text-align: center; }
+        .upload-icon { font-size: 40px; color: var(--brand); margin-bottom: 12px; }
+        .upload-text { font-size: 15px; font-weight: 600; color: var(--ink); }
+        .upload-hint { font-size: 12px; color: var(--muted); margin-top: 6px; display: block; }
 
-            .progress-bar-fill {
-                height: 100%;
-                background-color: var(--primary-color);
-                border-radius: 3px;
-                transition: width 0.3s ease;
-            }
+        .file-preview-container { width: 100%; text-align: left; }
 
-            @keyframes spin {
-                to {
-                    transform: rotate(360deg);
-                }
-            }
+        .folder-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--line);
+            color: var(--ink);
+            font-size: 14px;
+        }
 
-            /* How It Works Section */
-            .how-it-works {
-                background: var(--card-bg);
-                padding: 30px;
-                border-radius: var(--radius-lg);
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-            }
+        .folder-info i { color: var(--brand); margin-right: 6px; }
 
-            .section-title {
-                font-size: 18px;
-                font-weight: 700;
-                color: var(--text-main);
-                margin-bottom: 20px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
+        .btn-change {
+            background: transparent;
+            border: none;
+            color: var(--brand-dark);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .btn-change:hover { text-decoration: underline; }
 
-            .steps-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 20px;
-            }
+        .file-list {
+            margin-top: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            list-style: none;
+            padding-right: 5px;
+        }
 
-            .step-item {
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-            }
+        .file-list li {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            color: var(--muted);
+            padding: 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-            .step-number {
-                background-color: rgba(0, 180, 216, 0.15);
-                color: var(--primary-color);
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 700;
-                font-size: 14px;
-                flex-shrink: 0;
-            }
+        .action-area {
+            margin-top: 26px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+        }
 
-            .step-text h4 {
-                font-size: 14px;
-                font-weight: 600;
-                color: var(--text-main);
-                margin-bottom: 4px;
-            }
+        .btn {
+            width: 100%;
+            max-width: 260px;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: var(--font-body);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
 
-            .step-text p {
-                font-size: 12px;
-                color: var(--text-muted);
-                line-height: 1.4;
-            }
+        .btn-primary { background-color: var(--brand); color: #fff; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--brand-dark); transform: translateY(-2px); }
+        .btn-primary:disabled { background-color: #cbd5e1; cursor: not-allowed; }
 
-            /* Helper Class */
-            .hidden {
-                display: none !important;
-            }
-        </style>
+        .btn-success { background-color: var(--accent); color: #fff; }
+        .btn-success:hover { background-color: #ea5636; transform: translateY(-2px); }
+
+        .loading-box { display: flex; align-items: center; gap: 15px; width: 100%; max-width: 350px; }
+
+        .spinner {
+            width: 26px; height: 26px;
+            border: 3px solid rgba(0,147,172,0.2);
+            border-top-color: var(--brand);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .loading-text { flex-grow: 1; text-align: left; font-size: 13px; color: var(--ink); }
+        .loading-info { display: flex; justify-content: space-between; }
+        .progress-bar-bg { width: 100%; height: 6px; background-color: var(--line); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background-color: var(--brand); border-radius: 3px; transition: width 0.3s ease; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ============ Full-width sections below ============ */
+        .section-block {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--line);
+            padding: 40px 44px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--brand-dark);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .steps-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 28px;
+            border-left: 1px solid var(--line);
+            text-align: left;
+        }
+        .step-item:first-child { border-left: none; padding-left: 0; }
+
+        .step-number {
+            font-family: var(--font-mono);
+            color: var(--brand);
+            font-size: 12px;
+        }
+
+        .step-text h4 { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+        .step-text p { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+        .paperwork-block { display: grid; grid-template-columns: 260px 1fr; gap: 40px; align-items: start; }
+        .paperwork-block p { font-size: 14.5px; color: var(--ink); line-height: 1.7; text-align: left; }
+        .paperwork-headline { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.3; text-align: left; }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 28px 40px;
+        }
+
+        .faq-item { text-align: left; border-top: 1px solid var(--line); padding-top: 18px; }
+        .faq-item h4 { font-family: var(--font-display); font-size: 14.5px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+        .faq-item p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        .hidden { display: none !important; }
+
+        /* ============ Responsive ============ */
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; }
+            .hero-badge-col { position: static; flex-direction: row; align-items: center; }
+            .orbit-badge { width: 120px; height: 120px; flex-shrink: 0; }
+            .orbit-core { font-size: 10px; }
+            .analyzer-section { grid-template-columns: 1fr; }
+            .analyzer-side { order: -1; }
+            .steps-row { grid-template-columns: 1fr; gap: 24px; }
+            .step-item { border-left: none; padding-left: 0; border-top: 1px solid var(--line); padding-top: 18px; }
+            .step-item:first-child { border-top: none; padding-top: 0; }
+            .paperwork-block { grid-template-columns: 1fr; }
+            .faq-grid { grid-template-columns: 1fr; }
+            body { padding: 32px 16px 56px; }
+            .section-block { padding: 28px 22px; }
+            .analyzer-main { padding: 28px 22px; }
+        }
+    </style>
 
     <meta name="description" content="Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.">
     <meta name="keywords" content="AI folder analyzer, document data extraction, LLM parsing, PDF to CSV, automated file analysis">
@@ -394,40 +493,60 @@
     </script>
 </head>
 
-    <body>
+<body>
 
-        <div class="page-container">
+    <div class="page-shell">
 
-            <!-- 1. WHY CHOOSE US -->
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i class="fa-solid fa-bolt feature-icon"></i>
-                    <div class="feature-title">Smart Deep Parsing</div>
-                    <div class="feature-desc">Powered by LLMs to automatically extract key insights and summaries from complex documents across your folder.</div>
+        <!-- 1. HERO: WHY CHOOSE US (asymmetric — badge left, reasons right) -->
+        <section class="hero">
+            <div class="hero-badge-col">
+                <div class="orbit-badge">
+                    <div class="orbit-ring"></div>
+                    <div class="orbit-core">WHY<br>CHOOSE<br>US</div>
                 </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-folder-tree feature-icon"></i>
-                    <div class="feature-title">Multi-Level Subfolders</div>
-                    <div class="feature-desc">No need to manually sort files. Simply upload the root directory and let the parser recursively process all subfolders.</div>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-file-export feature-icon"></i>
-                    <div class="feature-title">One-Click CSV Export</div>
-                    <div class="feature-desc">Automatically convert unstructured data into clean, formatted fields ready for instant download as a standard CSV file.</div>
+                <p class="hero-badge-caption">One model, reading every file in the folder so your team doesn't have to open them one by one.</p>
+            </div>
+            <div>
+                <p class="eyebrow">AI Folder Analyzer</p>
+                <h1 class="hero-headline">Turn a messy folder into <span>one clean CSV</span>, in one pass.</h1>
+                <div class="reason-list">
+                    <div class="reason-item">
+                        <div class="reason-index">01</div>
+                        <div>
+                            <i class="fa-solid fa-bolt reason-icon"></i>
+                            <div class="reason-title">Smart Deep Parsing</div>
+                            <p class="reason-desc">Powered by LLMs to automatically extract key insights and summaries from complex documents across your folder.</p>
+                        </div>
+                    </div>
+                    <div class="reason-item">
+                        <div class="reason-index">02</div>
+                        <div>
+                            <i class="fa-solid fa-folder-tree reason-icon"></i>
+                            <div class="reason-title">Multi-Level Subfolders</div>
+                            <p class="reason-desc">No need to manually sort files. Simply upload the root directory and let the parser recursively process all subfolders.</p>
+                        </div>
+                    </div>
+                    <div class="reason-item">
+                        <div class="reason-index">03</div>
+                        <div>
+                            <i class="fa-solid fa-file-export reason-icon"></i>
+                            <div class="reason-title">One-Click CSV Export</div>
+                            <p class="reason-desc">Automatically convert unstructured data into clean, formatted fields ready for instant download as a standard CSV file.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <!-- 2. MAIN ANALYZER CARD -->
-            <div class="analyzer-card">
-                <!-- Header Section -->
+        <!-- 2. MAIN ANALYZER (main column + side rail, not a single centered card) -->
+        <section class="analyzer-section">
+            <div class="analyzer-main">
                 <div class="header">
                     <h2>Folder File Analyzer</h2>
                     <p class="subtitle">Upload a folder to analyze file contents with LLM and export to CSV</p>
                 </div>
 
-                <!-- Upload Area -->
                 <div class="upload-area" id="uploadArea">
-                    <!-- Hidden input, webkitdirectory allows folder selection -->
                     <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
 
                     <div class="upload-content" id="uploadPrompt">
@@ -436,27 +555,21 @@
                         <span class="upload-hint">Supports full directories including subfolders</span>
                     </div>
 
-                    <!-- File Preview Container (hidden by default) -->
                     <div class="file-preview-container hidden" id="filePreview">
                         <div class="folder-info">
                             <i class="fa-solid fa-folder-tree"></i>
                             <span id="folderName">Selected Folder: <strong>-</strong></span>
                             <button class="btn-change" id="btnChangeFolder">Change</button>
                         </div>
-                        <ul class="file-list" id="fileList">
-                            <!-- File paths will be dynamically rendered here -->
-                        </ul>
+                        <ul class="file-list" id="fileList"></ul>
                     </div>
                 </div>
 
-                <!-- Action & Status Area -->
                 <div class="action-area">
-                    <!-- 1. Analyse Button -->
                     <button class="btn btn-primary" id="btnAnalyse" disabled>
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Folder
                     </button>
 
-                    <!-- 2. Loading State (hidden by default) -->
                     <div class="loading-box hidden" id="loadingBox">
                         <div class="spinner"></div>
                         <div class="loading-text">
@@ -470,222 +583,178 @@
                         </div>
                     </div>
 
-                    <!-- 3. Download CSV Button (hidden by default) -->
                     <button class="btn btn-success hidden" id="btnDownload">
                         <i class="fa-solid fa-file-csv"></i> Download CSV
                     </button>
                 </div>
             </div>
 
-            <!-- 3. HOW IT WORKS -->
-            <div class="how-it-works">
-                <div class="section-title">
-                    <i class="fa-solid fa-circle-info" style="color: var(--primary-color);"></i>
-                    How It Works
+            <aside class="analyzer-side">
+                <div>
+                    <h4>How it works</h4>
+                    <div class="side-step"><b>01</b> Select or drop the root folder — subfolders included automatically.</div>
+                    <div class="side-step"><b>02</b> Run analysis — the LLM backend reads every PDF, Word, Excel and image file.</div>
+                    <div class="side-step"><b>03</b> Download one structured CSV with the fields that matter.</div>
                 </div>
-                <div class="steps-container">
-                    <div class="step-item">
-                        <div class="step-number">1</div>
-                        <div class="step-text">
-                            <h4>Select / Drop Folder</h4>
-                            <p>Click the upload area above to choose your target folder.</p>
-                        </div>
-                    </div>
-                    <div class="step-item">
-                        <div class="step-number">2</div>
-                        <div class="step-text">
-                            <h4>Run AI Analysis</h4>
-                            <p>Click "Analyze Folder" to begin automated processing with the LLM backend.</p>
-                        </div>
-                    </div>
-                    <div class="step-item">
-                        <div class="step-number">3</div>
-                        <div class="step-text">
-                            <h4>Export CSV File</h4>
-                            <p>Click "Download CSV" upon completion to save your structured dataset.</p>
-                        </div>
-                    </div>
-                </div>
+                <div class="side-note">Files are processed in memory and are not stored long-term on the server.</div>
+            </aside>
+        </section>
+
+        <!-- 3. BUILT FOR TEAMS -->
+        <section class="section-block">
+            <div class="paperwork-block">
+                <div class="paperwork-headline"><i class="fa-solid fa-briefcase" style="color: var(--brand); margin-right:8px;"></i>Built for teams drowning in paperwork</div>
+                <p>Property management firms, law offices, and back-office teams often deal with hundreds of PDFs, scanned contracts, and spreadsheets scattered across folders. Instead of opening each file one by one to copy key details into a spreadsheet, this tool reads the entire folder — including nested subfolders — and lets an AI model pull out the fields that matter, ready to download as a single CSV.</p>
             </div>
+        </section>
 
-            <!-- 4. USE CASE / WHY IT MATTERS -->
-<div class="how-it-works">
-    <div class="section-title">
-        <i class="fa-solid fa-briefcase" style="color: var(--primary-color);"></i>
-        Built for Teams Drowning in Paperwork
-    </div>
-    <p style="font-size: 14px; color: var(--text-main); line-height: 1.6;">
-        Property management firms, law offices, and back-office teams often deal with hundreds of PDFs, scanned contracts, and spreadsheets scattered across folders. Instead of opening each file one by one to copy key details into a spreadsheet, this tool reads the entire folder — including nested subfolders — and lets an AI model pull out the fields that matter, ready to download as a single CSV.
-    </p>
-</div>
-
-    <!-- 5. FAQ -->
-    <div class="how-it-works">
-        <div class="section-title">
-            <i class="fa-solid fa-circle-question" style="color: var(--primary-color);"></i>
-            Frequently Asked Questions
-        </div>
-        <div class="steps-container">
-            <div class="step-item">
-                <div class="step-text">
+        <!-- 4. FAQ -->
+        <section class="section-block">
+            <div class="section-title"><i class="fa-solid fa-circle-question"></i>Frequently Asked Questions</div>
+            <div class="faq-grid">
+                <div class="faq-item">
                     <h4>What file types are supported?</h4>
                     <p>PDF, Word (.docx), Excel (.xlsx/.xls), and image files (.jpg/.png) are all supported, including scanned documents processed with OCR.</p>
                 </div>
-            </div>
-            <div class="step-item">
-                <div class="step-text">
+                <div class="faq-item">
                     <h4>Does it handle subfolders?</h4>
                     <p>Yes. Upload the root folder and the tool recursively processes every file inside all subfolders automatically.</p>
                 </div>
-            </div>
-            <div class="step-item">
-                <div class="step-text">
+                <div class="faq-item">
                     <h4>What happens to my files after analysis?</h4>
                     <p>Files are processed in memory to extract the data you request, and are not stored long-term on the server.</p>
                 </div>
-            </div>
-            <div class="step-item">
-                <div class="step-text">
+                <div class="faq-item">
                     <h4>Do I need to install anything?</h4>
                     <p>No installation is required — everything runs directly in your browser.</p>
                 </div>
             </div>
-        </div>
+        </section>
+
     </div>
 
-        </div>
+    <!-- Frontend Interactive Script (unchanged logic) -->
+    <script>
+        const folderInput = document.getElementById('folderInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+        const filePreview = document.getElementById('filePreview');
+        const folderName = document.getElementById('folderName');
+        const fileList = document.getElementById('fileList');
+        const btnAnalyse = document.getElementById('btnAnalyse');
+        const btnChangeFolder = document.getElementById('btnChangeFolder');
+        const loadingBox = document.getElementById('loadingBox');
+        const loadingStatus = document.getElementById('loadingStatus');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const btnDownload = document.getElementById('btnDownload');
+        let generatedCsvBlob = null;
 
-        <!-- Frontend Interactive Script -->
-        <script>
-            const folderInput = document.getElementById('folderInput');
-            const uploadArea = document.getElementById('uploadArea');
-            const uploadPrompt = document.getElementById('uploadPrompt');
-            const filePreview = document.getElementById('filePreview');
-            const folderName = document.getElementById('folderName');
-            const fileList = document.getElementById('fileList');
-            const btnAnalyse = document.getElementById('btnAnalyse');
-            const btnChangeFolder = document.getElementById('btnChangeFolder');
-            const loadingBox = document.getElementById('loadingBox');
-            const loadingStatus = document.getElementById('loadingStatus');
-            const progressBar = document.getElementById('progressBar');
-            const progressPercent = document.getElementById('progressPercent');
-            const btnDownload = document.getElementById('btnDownload');
-            let generatedCsvBlob = null;
-
-            // Click upload area to trigger file input
-            uploadArea.addEventListener('click', (e) => {
-                if (e.target.id !== 'btnChangeFolder' && !filePreview.contains(e.target)) {
-                    folderInput.click();
-                }
-            });
-
-            btnChangeFolder.addEventListener('click', (e) => {
-                e.stopPropagation();
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target.id !== 'btnChangeFolder' && !filePreview.contains(e.target)) {
                 folderInput.click();
-            });
+            }
+        });
 
-            // Monitor folder selection
-            folderInput.addEventListener('change', (e) => {
-                const files = e.target.files;
-                if (files.length > 0) {
-                    const rootFolderName = files[0].webkitRelativePath.split('/')[0];
-                    folderName.innerHTML = `Selected: <strong>${rootFolderName}</strong> (${files.length} files)`;
+        btnChangeFolder.addEventListener('click', (e) => {
+            e.stopPropagation();
+            folderInput.click();
+        });
 
-                    fileList.innerHTML = '';
-                    Array.from(files).slice(0, 50).forEach(file => {
-                        const li = document.createElement('li');
-                        li.textContent = file.webkitRelativePath;
-                        fileList.appendChild(li);
-                    });
+        folderInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                const rootFolderName = files[0].webkitRelativePath.split('/')[0];
+                folderName.innerHTML = `Selected: <strong>${rootFolderName}</strong> (${files.length} files)`;
 
-                    uploadPrompt.classList.add('hidden');
-                    filePreview.classList.remove('hidden');
-                    btnAnalyse.disabled = false;
-                    btnDownload.classList.add('hidden'); 
+                fileList.innerHTML = '';
+                Array.from(files).slice(0, 50).forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = file.webkitRelativePath;
+                    fileList.appendChild(li);
+                });
+
+                uploadPrompt.classList.add('hidden');
+                filePreview.classList.remove('hidden');
+                btnAnalyse.disabled = false;
+                btnDownload.classList.add('hidden');
+            }
+        });
+
+        btnAnalyse.addEventListener('click', async () => {
+            const files = folderInput.files;
+            if (!files || files.length === 0) {
+                alert("Please select a folder first!");
+                return;
+            }
+
+            btnAnalyse.classList.add('hidden');
+            loadingBox.classList.remove('hidden');
+            loadingStatus.textContent = "Uploading files...";
+            progressBar.style.width = '0%';
+            progressPercent.textContent = '0%';
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            try {
+                const startResponse = await fetch('http://127.0.0.1:8000/api/analyze-folder/start', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!startResponse.ok) {
+                    throw new Error(`Server returned status: ${startResponse.status}`);
                 }
-            });
 
-            // When the user clicks the button, the actual packaged file is uploaded to the Python FastAPI backend.
-            btnAnalyse.addEventListener('click', async () => {
-                const files = folderInput.files;
-                if (!files || files.length === 0) {
-                    alert("Please select a folder first!");
-                    return;
-                }
+                const { job_id, total } = await startResponse.json();
+                loadingStatus.textContent = `Analyzing 0 / ${total} files...`;
 
-                btnAnalyse.classList.add('hidden');
-                loadingBox.classList.remove('hidden');
-                loadingStatus.textContent = "Uploading files...";
-                progressBar.style.width = '0%';
-                progressPercent.textContent = '0%';
+                const pollInterval = setInterval(async () => {
+                    const progRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/progress/${job_id}`);
+                    const prog = await progRes.json();
 
-                const formData = new FormData();
-                for (let i = 0; i < files.length; i++) {
-                    formData.append('files', files[i]);
-                }
+                    progressBar.style.width = `${prog.percent}%`;
+                    progressPercent.textContent = `${prog.percent}%`;
+                    loadingStatus.textContent = `Analyzing ${prog.done} / ${prog.total} files...`;
 
-                try {
-                    // 1. Upload files and immediately get job_id
-                    const startResponse = await fetch('http://127.0.0.1:8000/api/analyze-folder/start', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    if (prog.status === "finished") {
+                        clearInterval(pollInterval);
 
-                    if (!startResponse.ok) {
-                        throw new Error(`Server returned status: ${startResponse.status}`);
+                        const downloadRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/download/${job_id}`);
+                        generatedCsvBlob = await downloadRes.blob();
+
+                        setTimeout(() => {
+                            loadingBox.classList.add('hidden');
+                            btnDownload.classList.remove('hidden');
+                        }, 300);
                     }
+                }, 800);
 
-                    const { job_id, total } = await startResponse.json();
-                    loadingStatus.textContent = `Analyzing 0 / ${total} files...`;
+            } catch (error) {
+                console.error("Analysis Error:", error);
+                alert("Failed to analyze folder. Check console and make sure FastAPI backend is running!");
+                loadingBox.classList.add('hidden');
+                btnAnalyse.classList.remove('hidden');
+            }
+        });
 
-                    // 2. Poll progress every 800ms
-                    const pollInterval = setInterval(async () => {
-                        const progRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/progress/${job_id}`);
-                        const prog = await progRes.json();
+        btnDownload.addEventListener('click', () => {
+            if (!generatedCsvBlob) return;
 
-                        progressBar.style.width = `${prog.percent}%`;
-                        progressPercent.textContent = `${prog.percent}%`;
-                        loadingStatus.textContent = `Analyzing ${prog.done} / ${prog.total} files...`;
+            const url = window.URL.createObjectURL(generatedCsvBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'docuware_export.csv';
+            document.body.appendChild(a);
+            a.click();
 
-                        if (prog.status === "finished") {
-                            clearInterval(pollInterval);
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        });
+    </script>
+</body>
 
-                            // 3. Processing finished, fetch the final CSV
-                            const downloadRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/download/${job_id}`);
-                            generatedCsvBlob = await downloadRes.blob();
-
-                            setTimeout(() => {
-                                loadingBox.classList.add('hidden');
-                                btnDownload.classList.remove('hidden');
-                            }, 300);
-                        }
-                    }, 800);
-
-                } catch (error) {
-                    console.error("Analysis Error:", error);
-                    alert("Failed to analyze folder. Check console and make sure FastAPI backend is running!");
-                    loadingBox.classList.add('hidden');
-                    btnAnalyse.classList.remove('hidden');
-                }
-            });
-
-            btnDownload.addEventListener('click', () => {
-                if (!generatedCsvBlob) return;
-
-                // Create Blob download link
-                const url = window.URL.createObjectURL(generatedCsvBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'docuware_export.csv'; // Download file name
-                document.body.appendChild(a);
-                a.click();
-                
-                // Clean up temporary link
-                window.URL.revokeObjectURL(url);
-                a.remove();
-            });
-
-        </script>
-    </body>
-
-    </html>
+</html>
