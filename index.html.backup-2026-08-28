@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>AI Folder Analyzer – Auto CSV Export from PDFs, Docs & Images</title>
+    <title>AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -473,11 +473,11 @@
         }
     </style>
 
-    <meta name="description" content="Upload a folder and let our AI LLM parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.">
-    <meta name="keywords" content="AI folder analyzer, LLM document parser, auto CSV export, folder data extraction, document intelligence tool">
+    <meta name="description" content="Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.">
+    <meta name="keywords" content="AI folder analyzer, document data extraction, LLM parsing, PDF to CSV, automated file analysis">
     <link rel="canonical" href="https://docbot.makerkluang.com/">
-    <meta property="og:title" content="AI Folder Analyzer – Auto CSV Export from PDFs, Docs & Images">
-    <meta property="og:description" content="Upload a folder and let our AI LLM parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.">
+    <meta property="og:title" content="AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images">
+    <meta property="og:description" content="Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://docbot.makerkluang.com/">
     <meta name="twitter:card" content="summary_large_image">
@@ -485,13 +485,12 @@
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "AI Folder Analyzer – Auto CSV Export from PDFs, Docs & Images",
+      "name": "AI Folder Analyzer – Extract Key Data from PDFs, Docs & Images",
       "url": "https://docbot.makerkluang.com/",
       "applicationCategory": "BusinessApplication",
-      "description": "Upload a folder and let our AI LLM parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis."
+      "description": "Upload a folder and let our AI LLM automatically parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis."
     }
     </script>
-    
 </head>
 
 <body>
@@ -701,7 +700,7 @@
             }
 
             try {
-                const startResponse = await fetch('https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/start', {
+                const startResponse = await fetch('http://127.0.0.1:8000/api/analyze-folder/start', {
                     method: 'POST',
                     body: formData
                 });
@@ -714,7 +713,7 @@
                 loadingStatus.textContent = `Analyzing 0 / ${total} files...`;
 
                 const pollInterval = setInterval(async () => {
-                    const progRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/progress/${job_id}`);
+                    const progRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/progress/${job_id}`);
                     const prog = await progRes.json();
 
                     progressBar.style.width = `${prog.percent}%`;
@@ -724,7 +723,7 @@
                     if (prog.status === "finished") {
                         clearInterval(pollInterval);
 
-                        const downloadRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/download/${job_id}`);
+                        const downloadRes = await fetch(`http://127.0.0.1:8000/api/analyze-folder/download/${job_id}`);
                         generatedCsvBlob = await downloadRes.blob();
 
                         setTimeout(() => {

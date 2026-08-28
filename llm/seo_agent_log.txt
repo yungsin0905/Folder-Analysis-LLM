@@ -20,3 +20,46 @@ To https://github.com/yungsin0905/Folder-Analysis-LLM
    cbb143e..3c5f691  main -> main
 
 [2026-08-27 15:43:11] ❌ 运行出错: [Errno 2] No such file or directory: 'C:\\Users\\user\\.ssh'
+[2026-08-28 10:10:07] ===== SEO Agent 开始运行 =====
+[2026-08-28 10:10:07] 已备份原文件到 C:\Users\user\Desktop\Website\index.html.backup-2026-08-28
+[2026-08-28 10:10:39] 🔑 关键词策略：
+{
+  "high_priority": [
+    "AI folder analyzer",
+    "LLM document parser",
+    "auto CSV export",
+    "folder data extraction",
+    "document intelligence tool"
+  ],
+  "medium_priority": [
+    "PDF OCR extraction",
+    "Word file analysis",
+    "Excel data parsing",
+    "image document AI",
+    "bulk file processing"
+  ],
+  "reasoning": "基于网站功能描述，核心卖点是AI驱动的文件夹批量解析、自动生成CSV，并支持多种文档类型及子文件夹。关键词聚焦于这些技术与使用场景，与同类工具如Docsumo、Nanonets、Parseur 的市场语言保持一致。"
+}
+[2026-08-28 10:11:48] ✏️ SEO meta 建议：
+{
+  "title": "AI Folder Analyzer – Auto CSV Export from PDFs, Docs & Images",
+  "description": "Upload a folder and let our AI LLM parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis.",
+  "keywords": "AI folder analyzer, LLM document parser, auto CSV export, folder data extraction, document intelligence tool",
+  "og_title": "AI Folder Analyzer – Auto CSV Export from PDFs, Docs & Images",
+  "og_description": "Upload a folder and let our AI LLM parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis."
+}
+[2026-08-28 10:11:48] 🏷️ 提取到 0 条 FAQ，已生成 FAQPage 结构化数据
+[2026-08-28 10:11:48] 已写回 index.html（只有 <head> 区域有变化，版面/样式/脚本完全未动）
+[2026-08-28 10:11:48] 🔍 SEO 审计发现：
+⚠️ Title 长度为 61 字符，建议控制在 60 字符以内
+[2026-08-28 10:11:48] $ git add index.html
+
+[2026-08-28 10:11:48] $ git commit -m Automated SEO update: 2026-08-28
+[main 8d1fd8a] Automated SEO update: 2026-08-28
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+[2026-08-28 10:11:51] $ git push
+To https://github.com/yungsin0905/Folder-Analysis-LLM
+   bacc072..8d1fd8a  main -> main
+
+[2026-08-28 10:11:51] ===== SEO Agent 运行完成（已 push 到 GitHub，等待 cPanel Cron Job 拉取）=====
