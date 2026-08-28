@@ -428,7 +428,12 @@ async def start_analysis(files: list[UploadFile] = File(...)):
     job_id = str(uuid.uuid4())
 
     files_data = []
+    skipped_files = []
     for file in files:
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in SUPPORTED_EXTS:
+            skipped_files.append(file.filename)
+            continue
         content = await file.read()
         files_data.append((file.filename, content))
 
@@ -436,7 +441,7 @@ async def start_analysis(files: list[UploadFile] = File(...)):
 
     asyncio.create_task(run_analysis_job(job_id, files_data))
 
-    return {"job_id": job_id, "total": len(files_data)}
+    return {"job_id": job_id, "total": len(files_data), "skipped": skipped_files}
 
 
 # 🛑 取消任务接口
