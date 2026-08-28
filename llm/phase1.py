@@ -313,8 +313,22 @@ def extract_docuware_fields(full_text, filename=""):
 # ------------------------------------------------------------------
 # 5. FastAPI 接口与后台处理
 # ------------------------------------------------------------------
+SUPPORTED_EXTS = {'.pdf', '.docx', '.xlsx', '.xls', '.jpg', '.jpeg', '.png'}
+
 def process_file(file_bytes: bytes, filename: str) -> dict:
     ext = os.path.splitext(filename)[1].lower()
+
+    # 🛑 不支持的文件类型（例如 .heic、.webp、.txt、.csv、.zip 等）直接标记出来，
+    # 不再默默跳过导致输出全空字段却看不出原因
+    if ext not in SUPPORTED_EXTS:
+        return {
+            'File Name': filename,
+            'Document Type': 'UNSUPPORTED',
+            'Trade Name': '',
+            'Lot No': '',
+            'Company Name': f'Unsupported file type: {ext or "(no extension)"}',
+            'Document Date': ''
+        }
     text = ""
     try:
         if ext == '.pdf':
