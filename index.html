@@ -575,6 +575,46 @@
       "description": "Upload a folder and let our AI LLM parse PDFs, Word, Excel and image files, extracting key fields into a downloadable CSV for quick data analysis."
     }
     </script>
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What file types are supported?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PDF, Word (.docx), Excel (.xlsx/.xls), and image files (.jpg/.jpeg/.png) are all supported, including scanned documents processed with OCR."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it handle subfolders?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Upload the root folder and the tool recursively processes every file inside all subfolders automatically."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens to my files after analysis?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Files are processed in memory to extract the data you request, and are not stored long-term on the server."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to install anything?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No installation is required — everything runs directly in your browser."
+      }
+    }
+  ]
+}
+</script>
     
 </head>
 
@@ -939,6 +979,7 @@
             a.remove();
         });
     </script>
+    
 </body>
 
 </html>
