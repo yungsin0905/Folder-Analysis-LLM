@@ -730,6 +730,12 @@
     </div>
 
     <script>
+        // ============================================================
+        // 后端 API 地址：改成 ngrok 的固定域名，以后再换隧道服务
+        // 只需要改这一行，下面所有请求都会自动用这个新地址
+        // ============================================================
+        const API_BASE_URL = 'https://alias-bamboo-float.ngrok-free.dev';
+
         const folderInput = document.getElementById('folderInput');
         const uploadArea = document.getElementById('uploadArea');
         const uploadPrompt = document.getElementById('uploadPrompt');
@@ -830,8 +836,13 @@
             }
 
             try {
-                const startResponse = await fetch('https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/start', {
+                const startResponse = await fetch(`${API_BASE_URL}/api/analyze-folder/start`, {
                     method: 'POST',
+                    headers: {
+                        // ngrok 免费版会给浏览器插入一个确认页面，加上这个请求头可以跳过它，
+                        // 否则程序收到的会是一段 HTML 警告页面而不是真正的 JSON 数据
+                        'ngrok-skip-browser-warning': 'true'
+                    },
                     body: formData
                 });
 
@@ -852,7 +863,9 @@
                     }
 
                     try {
-                        const progRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/progress/${job_id}`);
+                        const progRes = await fetch(`${API_BASE_URL}/api/analyze-folder/progress/${job_id}`, {
+                            headers: { 'ngrok-skip-browser-warning': 'true' }
+                        });
                         const prog = await progRes.json();
 
                         if (isStopped) return;
@@ -864,7 +877,9 @@
                         if (prog.status === "finished") {
                             clearInterval(pollInterval);
 
-                            const downloadRes = await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/download/${job_id}`);
+                            const downloadRes = await fetch(`${API_BASE_URL}/api/analyze-folder/download/${job_id}`, {
+                                headers: { 'ngrok-skip-browser-warning': 'true' }
+                            });
                             generatedCsvBlob = await downloadRes.blob();
 
                             setTimeout(() => {
@@ -906,8 +921,9 @@
             // 关键改动：真正通知后端取消，而不是只在前端假装停止
             if (currentJobId) {
                 try {
-                    await fetch(`https://profession-perfectly-chester-sherman.trycloudflare.com/api/analyze-folder/cancel/${currentJobId}`, {
-                        method: 'POST'
+                    await fetch(`${API_BASE_URL}/api/analyze-folder/cancel/${currentJobId}`, {
+                        method: 'POST',
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
                     });
                 } catch (err) {
                     console.error("取消任务失败:", err);
